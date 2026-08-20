@@ -55,7 +55,7 @@ export default function AdminLogin() {
           id="admin-email"
           label="Admin email"
           type="email"
-          placeholder="you@bmsce.ac.in"
+          placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required

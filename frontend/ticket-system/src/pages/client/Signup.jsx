@@ -114,7 +114,7 @@ export default function Signup() {
           id="signup-email"
           label="Email"
           type="email"
-          placeholder="you@bmsce.ac.in"
+          placeholder="you@example.com"
           value={form.email}
           onChange={update("email")}
           error={fieldErrors.email}
