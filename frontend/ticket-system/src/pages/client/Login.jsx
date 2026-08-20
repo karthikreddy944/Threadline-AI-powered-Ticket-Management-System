@@ -59,7 +59,7 @@ export default function Login() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input
           id="email"
-          label="College email"
+          label="Email"
           type="email"
           placeholder="you@bmsce.ac.in"
           value={email}

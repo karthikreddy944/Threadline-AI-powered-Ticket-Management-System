@@ -49,7 +49,7 @@ export default function AdminSettings() {
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input id="name" label="Full name" defaultValue={profile?.name} />
-              <Input id="email" label="College email" defaultValue={profile?.email} disabled />
+              <Input id="email" label="Email" defaultValue={profile?.email} disabled />
               <Input id="role" label="Role" defaultValue={roleLabel} disabled />
               <Input id="phone" label="Phone (optional)" placeholder="+91 " />
             </div>

@@ -45,8 +45,8 @@ export default function Settings() {
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input id="name" label="Full name" defaultValue={profile?.name} />
-              <Input id="email" label="College email" defaultValue={profile?.email} disabled />
-              <Input id="dept" label="Department" defaultValue={profile?.department} />
+              <Input id="email" label="Email" defaultValue={profile?.email} disabled />
+              <Input id="dept" label="Company" defaultValue={profile?.department} />
               <Input id="phone" label="Phone (optional)" placeholder="+91 " />
             </div>
             <div className="mt-4 flex items-center justify-end gap-3 border-t border-line pt-4">

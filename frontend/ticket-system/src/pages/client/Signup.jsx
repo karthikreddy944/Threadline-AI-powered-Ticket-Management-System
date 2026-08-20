@@ -112,7 +112,7 @@ export default function Signup() {
         />
         <Input
           id="signup-email"
-          label="College email"
+          label="Email"
           type="email"
           placeholder="you@bmsce.ac.in"
           value={form.email}
