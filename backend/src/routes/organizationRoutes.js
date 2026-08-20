@@ -1,0 +1,10 @@
+const express = require("express");
+const { protect } = require("../middleware/authMiddleware");
+const { requireRole } = require("../middleware/roleMiddleware");
+const { getOrganization, getClients, getClient } = require("../controllers/organizationController");
+const router = express.Router();
+router.use(protect, requireRole("admin"));
+router.get("/", getOrganization);
+router.get("/clients", getClients);
+router.get("/clients/:id", getClient);
+module.exports = router;

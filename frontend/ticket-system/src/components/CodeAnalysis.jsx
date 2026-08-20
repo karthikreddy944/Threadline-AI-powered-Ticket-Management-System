@@ -8,7 +8,8 @@ const SEVERITY_LABEL = { critical: "Critical", high: "High", medium: "Medium", l
 const SEVERITY_ORDER = ["critical", "high", "medium", "low"];
 
 /**
- * Admin-only AI Code Analysis panel. Shown on AdminTicketDetails only —
+ * AI Code Analysis panel. Shown to admins and the employee assigned to the
+ * ticket —
  * see frontend build notes for why this isn't reused on the client
  * ticket page.
  *

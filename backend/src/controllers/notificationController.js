@@ -10,7 +10,7 @@ const { asyncHandler, sendSuccess } = require("../utils/apiResponse");
 const listNotifications = asyncHandler(async (req, res) => {
   const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 100);
 
-  const notifications = await Notification.find({ recipient: req.user._id })
+  const notifications = await Notification.find({ organizationId: req.organizationId, recipient: req.user._id })
     .populate("ticket", "ticketId title")
     .populate("actor", "name role")
     .sort({ createdAt: -1 })
@@ -23,7 +23,7 @@ const listNotifications = asyncHandler(async (req, res) => {
  * GET /api/notifications/unread-count
  */
 const getUnreadCount = asyncHandler(async (req, res) => {
-  const count = await Notification.countDocuments({ recipient: req.user._id, read: false });
+  const count = await Notification.countDocuments({ organizationId: req.organizationId, recipient: req.user._id, read: false });
   return sendSuccess(res, 200, { count });
 });
 
@@ -32,7 +32,7 @@ const getUnreadCount = asyncHandler(async (req, res) => {
  * Marks a single notification as read. Only the recipient can do this.
  */
 const markAsRead = asyncHandler(async (req, res) => {
-  const notification = await Notification.findById(req.params.id);
+  const notification = await Notification.findOne({ _id: req.params.id, organizationId: req.organizationId });
 
   if (!notification) {
     res.status(404);
@@ -57,7 +57,7 @@ const markAsRead = asyncHandler(async (req, res) => {
  * Marks every unread notification belonging to the current user as read.
  */
 const markAllAsRead = asyncHandler(async (req, res) => {
-  await Notification.updateMany({ recipient: req.user._id, read: false }, { $set: { read: true } });
+  await Notification.updateMany({ organizationId: req.organizationId, recipient: req.user._id, read: false }, { $set: { read: true } });
   return sendSuccess(res, 200, { success: true });
 });
 

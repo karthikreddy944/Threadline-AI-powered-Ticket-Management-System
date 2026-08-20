@@ -38,18 +38,19 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
+  const loginWithData = useCallback(({ user: loggedInUser, token }) => { setToken(token); setUser(loggedInUser); return loggedInUser; }, []);
+
   const login = useCallback(async (email, password) => {
     const { user: loggedInUser, token } = await apiLogin(email, password);
-    setToken(token);
-    setUser(loggedInUser);
-    return loggedInUser;
-  }, []);
+    return loginWithData({ user: loggedInUser, token });
+  }, [loginWithData]);
 
   const value = {
     user,
     loading,
     isAuthenticated: !!user,
     login,
+    loginWithData,
     logout,
   };
 

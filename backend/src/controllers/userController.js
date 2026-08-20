@@ -8,7 +8,7 @@ const { toSafeUser } = require("./authController");
  * Returns the currently authenticated user's profile.
  */
 const getMe = asyncHandler(async (req, res) => {
-  return sendSuccess(res, 200, toSafeUser(req.user));
+  return sendSuccess(res, 200, toSafeUser(req.user, req.organization));
 });
 
 /**
@@ -22,12 +22,18 @@ const getMe = asyncHandler(async (req, res) => {
  * on the frontend).
  */
 const getUsers = asyncHandler(async (req, res) => {
-  const { role } = req.query;
+  const { role, search = "", department = "", active } = req.query;
   const isEmployeeList = req.path.endsWith("/employees");
   const requestedRole = isEmployeeList ? "employee" : role;
 
-  const filter = {};
+  const filter = { organizationId: req.organizationId };
   if (requestedRole) filter.role = requestedRole;
+  if (department) filter.department = department;
+  if (active === "true" || active === "false") filter.isActive = active === "true";
+  if (search.trim()) {
+    const pattern = new RegExp(search.trim(), "i");
+    filter.$or = [{ name: pattern }, { email: pattern }, { department: pattern }, { employeeId: pattern }, { employeeRole: pattern }];
+  }
 
   const users = await User.find(filter).select("-password").sort({ createdAt: -1 });
 
@@ -39,7 +45,7 @@ const getUsers = asyncHandler(async (req, res) => {
   // never hardcoded on the frontend.
   const employeeIds = users.map((u) => u._id);
   const counts = await Ticket.aggregate([
-    { $match: { assignedTo: { $in: employeeIds } } },
+    { $match: { organizationId: req.organizationId, assignedTo: { $in: employeeIds } } },
     {
       $group: {
         _id: "$assignedTo",
@@ -111,6 +117,7 @@ const createEmployee = asyncHandler(async (req, res) => {
     employeeId,
     employeeRole,
     isActive: !!isActive,
+    organizationId: req.organizationId,
   });
 
   return sendSuccess(res, 201, toSafeUser(user));
@@ -123,7 +130,7 @@ const createEmployee = asyncHandler(async (req, res) => {
  * enforced in authController.login, not just hidden in the UI.
  */
 const updateEmployee = asyncHandler(async (req, res) => {
-  const employee = await User.findOne({ _id: req.params.id, role: "employee" }).select("+password");
+  const employee = await User.findOne({ _id: req.params.id, role: "employee", organizationId: req.organizationId }).select("+password");
   if (!employee) {
     res.status(404);
     throw new Error("Employee not found");
@@ -165,7 +172,7 @@ const updateEmployee = asyncHandler(async (req, res) => {
  * this for the Enable/Disable actions instead of a full edit).
  */
 const updateEmployeeStatus = asyncHandler(async (req, res) => {
-  const employee = await User.findOne({ _id: req.params.id, role: "employee" });
+  const employee = await User.findOne({ _id: req.params.id, role: "employee", organizationId: req.organizationId });
   if (!employee) {
     res.status(404);
     throw new Error("Employee not found");
@@ -188,14 +195,14 @@ const updateEmployeeStatus = asyncHandler(async (req, res) => {
  * tickets so nothing is left pointing at a user that no longer exists.
  */
 const deleteEmployee = asyncHandler(async (req, res) => {
-  const employee = await User.findOne({ _id: req.params.id, role: "employee" });
+  const employee = await User.findOne({ _id: req.params.id, role: "employee", organizationId: req.organizationId });
   if (!employee) {
     res.status(404);
     throw new Error("Employee not found");
   }
 
   await Ticket.updateMany(
-    { assignedTo: employee._id },
+    { organizationId: req.organizationId, assignedTo: employee._id },
     { $set: { assignedTo: null, assignedAt: null, status: "New" } }
   );
 

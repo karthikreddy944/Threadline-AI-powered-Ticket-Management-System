@@ -1,22 +1,47 @@
 import { useEffect, useState } from "react";
+import { Check, Copy } from "lucide-react";
 import Topbar from "../../components/Topbar";
 import Input from "../../components/Input";
 import Button from "../../components/Button";
 import LoadingState from "../../components/LoadingState";
-import { getCurrentUser, getAllocationSettings, updateAllocationSettings } from "../../lib/api";
+import { getCurrentUser, getOrganization, getAllocationSettings, updateAllocationSettings } from "../../lib/api";
 import { getInitials } from "../../lib/adapters";
+import AppearanceSettings from "../../components/AppearanceSettings";
 
 export default function AdminSettings() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [note, setNote] = useState("");
+  const [codeCopied, setCodeCopied] = useState(false);
   const [allocation, setAllocation] = useState({ mode: "manual", strategy: "round_robin", priorityOrder: ["Critical","High","Medium","Low"] });
   const [allocationNote, setAllocationNote] = useState("");
 
+  const [organization, setOrganization] = useState(null);
+  const [loadError, setLoadError] = useState("");
+
   useEffect(() => {
-    Promise.all([getCurrentUser(), getAllocationSettings()])
-      .then(([me, settings]) => { setProfile(me); setAllocation(settings); })
-      .finally(() => setLoading(false));
+    let active = true;
+
+    const load = async () => {
+      const [profileResult, organizationResult, allocationResult] = await Promise.allSettled([
+        getCurrentUser(),
+        getOrganization(),
+        getAllocationSettings(),
+      ]);
+
+      if (!active) return;
+
+      if (profileResult.status === "fulfilled") setProfile(profileResult.value);
+      if (organizationResult.status === "fulfilled") setOrganization(organizationResult.value);
+      if (allocationResult.status === "fulfilled") setAllocation(allocationResult.value);
+
+      const failed = [profileResult, organizationResult, allocationResult].find((result) => result.status === "rejected");
+      if (failed) setLoadError(failed.reason?.message || "Some settings could not be loaded.");
+      setLoading(false);
+    };
+
+    load();
+    return () => { active = false; };
   }, []);
 
   if (loading) {
@@ -32,11 +57,49 @@ export default function AdminSettings() {
 
   const roleLabel = profile?.role === "admin" ? "Admin" : profile?.role;
 
+  const copyAdminCode = async () => {
+    const code = organization?.adminCode || profile?.organization?.adminCode;
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 1500);
+    } catch (_) {
+      // Clipboard API unavailable — the code remains visible to copy manually.
+    }
+  };
+
   return (
     <>
       <Topbar eyebrow="Account" title="Admin settings" />
       <div className="flex-1 overflow-y-auto px-6 py-6">
-        <div className="mx-auto flex max-w-xl flex-col gap-5">
+        <div className="flex w-full flex-col gap-5">
+          {loadError && <p className="text-[12.5px] text-danger">{loadError}</p>}
+          <div className="rounded-lg border border-accent-line bg-accent-soft/30 p-5">
+            <h3 className="text-[13px] font-semibold text-ink">Organization</h3>
+            <p className="mt-1 text-[12px] text-ink-muted">{organization?.name || profile?.organization?.name || "Organization"}</p>
+            <div className="mt-3 rounded-md border border-line bg-surface px-3 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[11.5px] text-ink-faint">Admin Code</span>
+                <span className="font-mono text-[12px] font-semibold tracking-wide text-ink">
+                  {organization?.adminCode || profile?.organization?.adminCode || "—"}
+                </span>
+              </div>
+              {(organization?.adminCode || profile?.organization?.adminCode) && (
+                <div className="mt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={copyAdminCode}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-2.5 py-1.5 text-[11.5px] font-medium text-ink hover:bg-surface-alt"
+                  >
+                    {codeCopied ? <Check size={14} /> : <Copy size={14} />}
+                    {codeCopied ? "Copied" : "Copy code"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           <div className="rounded-lg border border-line bg-surface p-5">
             <div className="mb-4 flex items-center gap-3">
               <div className="flex size-11 items-center justify-center rounded-full bg-surface-sunken text-[13px] font-semibold text-ink">
@@ -60,8 +123,7 @@ export default function AdminSettings() {
               </Button>
             </div>
           </div>
-
-
+          <AppearanceSettings />
           <div className="rounded-lg border border-line bg-surface p-5">
             <h3 className="mb-1 text-[13px] font-semibold text-ink">Assignment settings</h3>
             <p className="mb-4 text-[12px] text-ink-faint">Choose whether tickets are assigned to employees manually or automatically.</p>
@@ -107,6 +169,7 @@ export default function AdminSettings() {
             )}
 
             <div className="mt-4 flex items-center justify-end gap-3">{allocationNote&&<span className="text-[12px] text-ink-faint">{allocationNote}</span>}<Button variant="primary" onClick={async()=>{try{const saved=await updateAllocationSettings(allocation);setAllocation(saved);setAllocationNote("Assignment settings saved.")}catch(e){setAllocationNote(e.message)}}}>Save assignment settings</Button></div>
+          </div>
           </div>
 
           <div className="rounded-lg border border-line bg-surface p-5">

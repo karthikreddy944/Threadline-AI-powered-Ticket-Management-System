@@ -8,7 +8,7 @@ export default function Input({ label, hint, error, id, className = "", ...props
       )}
       <input
         id={id}
-        className="h-9 rounded-md border border-line-strong bg-surface px-3 text-[13px] text-ink placeholder:text-ink-faint outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent-line"
+        className="h-9 rounded-lg border border-line-strong bg-surface px-3 text-[13px] text-ink shadow-xs placeholder:text-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-line"
         {...props}
       />
       {hint && !error && <span className="text-[11.5px] text-ink-faint">{hint}</span>}

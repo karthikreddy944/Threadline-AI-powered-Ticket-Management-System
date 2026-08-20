@@ -21,11 +21,11 @@ export default function ProtectedRoute({ role }) {
   }
 
   if (!user) {
-    return <Navigate to={role === "admin" ? "/admin/login" : role === "employee" ? "/employee/login" : "/login"} replace />;
+    return <Navigate to={role === "admin" ? "/admin/login" : role === "employee" ? "/employee/login" : role === "superadmin" ? "/platform/login" : "/login"} replace />;
   }
 
   if (role && user.role !== role) {
-    return <Navigate to={user.role === "admin" ? "/admin" : user.role === "employee" ? "/employee" : "/app"} replace />;
+    return <Navigate to={user.role === "superadmin" ? "/platform" : user.role === "admin" ? "/admin" : user.role === "employee" ? "/employee" : "/app"} replace />;
   }
 
   return <Outlet />;

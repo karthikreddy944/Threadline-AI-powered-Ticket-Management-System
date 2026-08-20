@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const ticketActivitySchema = new mongoose.Schema(
   {
+    organizationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true, default: null },
     ticket: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Ticket",

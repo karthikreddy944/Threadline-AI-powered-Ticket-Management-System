@@ -110,3 +110,9 @@ Two separate problems in the pre-existing code:
     assignments.
 12. Reassign an already-assigned ticket to a different employee and
     confirm the previous assignee gets a reassignment notification.
+
+## Multi-tenant architecture update
+
+Threadline now models an Organization as the tenant. Admin registration creates an Organization and a unique Admin Code. Clients register with that code; employees created by an Admin inherit the Admin's organization. Organization IDs are used to scope users, tickets, notifications, activities and allocation settings.
+
+GitHub is Admin-only. The organization's Admin connects GitHub and selects the organization's repository. Clients and employees do not receive GitHub UI controls, and GitHub API routes are protected by the admin role on the backend.

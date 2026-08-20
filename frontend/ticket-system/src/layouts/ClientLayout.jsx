@@ -27,7 +27,7 @@ export default function ClientLayout() {
 
   const sidebarUser = {
     name: user?.name || "",
-    role: user?.department || "Client",
+    role: user?.organization?.name || "Client",
     initials: getInitials(user?.name),
   };
 

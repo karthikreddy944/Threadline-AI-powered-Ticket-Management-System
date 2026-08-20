@@ -3,13 +3,13 @@ const allocationService = require("../services/allocationService");
 
 /** GET /api/allocation */
 const getSettings = asyncHandler(async (req, res) => {
-  const settings = await allocationService.getSettings();
+  const settings = await allocationService.getSettings(req.organizationId);
   return sendSuccess(res, 200, settings);
 });
 
 /** PUT /api/allocation — persists mode + strategy in the database. */
 const updateSettings = asyncHandler(async (req, res) => {
-  const settings = await allocationService.updateSettings(req.body || {});
+  const settings = await allocationService.updateSettings({ ...(req.body || {}), organizationId: req.organizationId });
   return sendSuccess(res, 200, settings);
 });
 
@@ -18,6 +18,7 @@ const assignTicket = asyncHandler(async (req, res) => {
   const result = await allocationService.assignTicketAutomatically({
     ticketId: req.params.ticketId,
     actorId: req.user._id,
+    organizationId: req.organizationId,
     allowReassign: req.body?.allowReassign === true,
   });
 
@@ -31,7 +32,7 @@ const assignTicket = asyncHandler(async (req, res) => {
 
 /** POST /api/allocation/assign-all — automatic assignment for every unassigned ticket. */
 const assignAllUnassigned = asyncHandler(async (req, res) => {
-  const result = await allocationService.assignAllUnassigned({ actorId: req.user._id });
+  const result = await allocationService.assignAllUnassigned({ actorId: req.user._id, organizationId: req.organizationId });
 
   if (result.error) {
     res.status(result.status || 400);

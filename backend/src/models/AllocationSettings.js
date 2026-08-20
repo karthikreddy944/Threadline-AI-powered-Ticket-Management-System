@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
 
 const schema = new mongoose.Schema({
-  key: { type: String, unique: true, default: "default" },
+  organizationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, unique: true, index: true },
+  key: { type: String, default: "default" },
 
   // Admin-selected assignment mode. "manual" = admin picks the employee
   // for every ticket by hand. "automatic" = the backend picks the

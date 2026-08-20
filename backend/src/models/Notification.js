@@ -17,6 +17,7 @@ const NOTIFICATION_TYPES = [
 
 const notificationSchema = new mongoose.Schema(
   {
+    organizationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true, default: null },
     recipient: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

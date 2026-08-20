@@ -9,8 +9,10 @@ import { useUnreadNotificationCount } from "../lib/useNotifications";
 const baseNavItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutGrid, end: true },
   { to: "/admin/queue", label: "Ticket Queue", icon: ListTodo },
+  { to: "/admin/repository", label: "Repository", icon: GitBranch },
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/admin/employees", label: "Employees", icon: Users },
+  { to: "/admin/clients", label: "Clients", icon: Users },
   { to: "/admin/notifications", label: "Notifications", icon: Bell },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];

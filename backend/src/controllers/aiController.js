@@ -5,6 +5,17 @@ const { analyzeTicketCode: runCodeAnalysis, CodeAnalysisError } = require("../se
 const { LlmServiceError } = require("../services/ai/llmService");
 const { analyzeTicketRepository, RepoAnalysisError } = require("../services/ai/repoAnalyzer");
 const { notifyAdmins } = require("../services/notificationService");
+const PlatformSettings = require("../models/PlatformSettings");
+
+async function assertPlatformAiEnabled(kind) {
+  const settings = await PlatformSettings.findOne({ key: "platform" });
+  const enabled = settings?.ai?.enabled !== false && (kind === "code" ? settings?.ai?.codeAnalysisEnabled !== false : settings?.ai?.repositoryAnalysisEnabled !== false);
+  if (!enabled) {
+    const error = new Error("This AI feature is currently disabled by Platform Operations.");
+    error.statusCode = 403;
+    throw error;
+  }
+}
 
 
 function assertStaffTicketAccess(req, res, ticket) {
@@ -39,12 +50,14 @@ const STATUS_BY_ERROR_CODE = {
 
 /**
  * POST /api/tickets/:id/ai/analyze
- * ADMIN ONLY (enforced in ticketRoutes.js via requireRole).
+ * Staff only: admins and the employee currently assigned to the ticket.
  * Finds the ticket's supported code attachment, sends it to the LLM,
  * validates the response, and saves it to Ticket.aiAnalysis.
  */
 const analyzeCode = asyncHandler(async (req, res) => {
-  const ticket = await Ticket.findById(req.params.id);
+  await assertPlatformAiEnabled("code");
+  if (req.organization?.subscription?.aiEnabled === false) { res.status(403); throw new Error("AI analysis is disabled for this organization. Contact your administrator."); }
+  const ticket = await Ticket.findOne({ _id: req.params.id, organizationId: req.organizationId });
   if (!ticket) {
     res.status(404);
     throw new Error("Ticket not found");
@@ -89,17 +102,17 @@ const analyzeCode = asyncHandler(async (req, res) => {
 
 /**
  * GET /api/tickets/:id/ai
- * ADMIN ONLY. Returns the last saved AI analysis for a ticket, or
+ * Staff only. Returns the last saved AI analysis for a ticket, or
  * null if it hasn't been analyzed yet.
  */
 const getAiAnalysis = asyncHandler(async (req, res) => {
-  const ticket = await Ticket.findById(req.params.id).select("aiAnalysis");
+  const ticket = await Ticket.findOne({ _id: req.params.id, organizationId: req.organizationId }).select("aiAnalysis");
   if (!ticket) {
     res.status(404);
     throw new Error("Ticket not found");
   }
   if (req.user.role === "employee") {
-    const full = await Ticket.findById(req.params.id).select("assignedTo");
+    const full = await Ticket.findOne({ _id: req.params.id, organizationId: req.organizationId }).select("assignedTo");
     assertStaffTicketAccess(req, res, full);
   }
 
@@ -111,7 +124,9 @@ const getAiAnalysis = asyncHandler(async (req, res) => {
 });
 
 const analyzeRepository = asyncHandler(async (req, res) => {
-  const ticket = await Ticket.findById(req.params.id);
+  await assertPlatformAiEnabled("repository");
+  if (req.organization?.subscription?.aiEnabled === false) { res.status(403); throw new Error("AI analysis is disabled for this organization. Contact your administrator."); }
+  const ticket = await Ticket.findOne({ _id: req.params.id, organizationId: req.organizationId });
   if (!ticket) { res.status(404); throw new Error("Ticket not found"); }
   assertStaffTicketAccess(req, res, ticket);
   let analysis;
@@ -148,9 +163,9 @@ const analyzeRepository = asyncHandler(async (req, res) => {
 });
 
 const getRepoAnalysis = asyncHandler(async (req, res) => {
-  const ticket = await Ticket.findById(req.params.id).select("repoAnalysis githubRepo");
+  const ticket = await Ticket.findOne({ _id: req.params.id, organizationId: req.organizationId }).select("repoAnalysis githubRepo");
   if (!ticket) { res.status(404); throw new Error("Ticket not found"); }
-  if (req.user.role === "employee") { const full = await Ticket.findById(req.params.id).select("assignedTo"); assertStaffTicketAccess(req, res, full); }
+  if (req.user.role === "employee") { const full = await Ticket.findOne({ _id: req.params.id, organizationId: req.organizationId }).select("assignedTo"); assertStaffTicketAccess(req, res, full); }
   return sendSuccess(res, 200, { status: ticket.repoAnalysis ? "ok" : "not_analyzed", analysis: ticket.repoAnalysis || null, repository: ticket.githubRepo || null });
 });
 

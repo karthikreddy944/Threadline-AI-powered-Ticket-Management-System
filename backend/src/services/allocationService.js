@@ -32,15 +32,15 @@ const STRATEGY_LABELS = {
 /* Settings                                                           */
 /* ------------------------------------------------------------------ */
 
-async function getSettings() {
+async function getSettings(organizationId) {
   return AllocationSettings.findOneAndUpdate(
-    { key: "default" },
+    { organizationId },
     {},
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 }
 
-async function updateSettings({ mode, strategy, priorityOrder }) {
+async function updateSettings({ organizationId, mode, strategy, priorityOrder }) {
   const update = {};
 
   if (mode !== undefined) {
@@ -54,7 +54,7 @@ async function updateSettings({ mode, strategy, priorityOrder }) {
   }
 
   return AllocationSettings.findOneAndUpdate(
-    { key: "default" },
+    { organizationId },
     update,
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
@@ -65,19 +65,19 @@ async function updateSettings({ mode, strategy, priorityOrder }) {
 /* ------------------------------------------------------------------ */
 
 /** Only ACTIVE employees are ever eligible for assignment (manual or automatic). */
-async function getActiveEmployees() {
-  return User.find({ role: "employee", isActive: true }).sort({ createdAt: 1, _id: 1 });
+async function getActiveEmployees(organizationId) {
+  return User.find({ organizationId, role: "employee", isActive: true }).sort({ createdAt: 1, _id: 1 });
 }
 
 /**
  * Real, backend-computed workload per employee — never a frontend
  * counter. Returns a Map keyed by employee id string.
  */
-async function getWorkloadMap(employeeIds) {
+async function getWorkloadMap(employeeIds, organizationId) {
   if (!employeeIds.length) return new Map();
 
   const rows = await Ticket.aggregate([
-    { $match: { assignedTo: { $in: employeeIds } } },
+    { $match: { organizationId, assignedTo: { $in: employeeIds } } },
     {
       $group: {
         _id: "$assignedTo",
@@ -251,9 +251,9 @@ async function applyAssignment({ ticket, employee, actorId, method, strategyLabe
  */
 async function autoAssignOnCreate(ticket) {
   try {
-    const settings = await getSettings();
+    const settings = await getSettings(ticket.organizationId);
     if (settings.mode !== "automatic") return null;
-    return await runAutomaticAssignment({ ticket, settings, actorId: ticket.createdBy });
+    return await runAutomaticAssignment({ ticket, settings, actorId: ticket.createdBy, organizationId: ticket.organizationId });
   } catch (error) {
     console.error("Automatic assignment on create failed:", error.message);
     return null;
@@ -266,11 +266,11 @@ async function autoAssignOnCreate(ticket) {
  * Returns the assigned employee, or null if there were no eligible
  * active employees.
  */
-async function runAutomaticAssignment({ ticket, settings, actorId }) {
-  const employees = await getActiveEmployees();
+async function runAutomaticAssignment({ ticket, settings, actorId, organizationId }) {
+  const employees = await getActiveEmployees(organizationId);
   if (!employees.length) return null;
 
-  const workloadMap = await getWorkloadMap(employees.map((e) => e._id));
+  const workloadMap = await getWorkloadMap(employees.map((e) => e._id), organizationId);
   const selection = selectEmployee({
     strategy: settings.strategy,
     employees,
@@ -304,12 +304,12 @@ async function runAutomaticAssignment({ ticket, settings, actorId }) {
  * exists → mode is automatic → eligible active employees exist →
  * ticket not already resolved/assigned (unless explicit reassignment).
  */
-async function assignTicketAutomatically({ ticketId, actorId, allowReassign = false }) {
+async function assignTicketAutomatically({ ticketId, actorId, allowReassign = false, organizationId }) {
   if (!mongoose.isValidObjectId(ticketId)) {
     return { error: "Invalid ticket id", status: 400 };
   }
 
-  const ticket = await Ticket.findById(ticketId);
+  const ticket = await Ticket.findOne({ _id: ticketId, organizationId });
   if (!ticket) return { error: "Ticket not found", status: 404 };
 
   if (ticket.assignedTo && !allowReassign) {
@@ -319,12 +319,12 @@ async function assignTicketAutomatically({ ticketId, actorId, allowReassign = fa
     return { error: "Ticket is already resolved and cannot be auto-assigned.", status: 400 };
   }
 
-  const settings = await getSettings();
+  const settings = await getSettings(organizationId);
   if (settings.mode !== "automatic") {
     return { error: "Automatic assignment is not enabled. Switch Assignment Mode to Automatic first.", status: 400 };
   }
 
-  const employee = await runAutomaticAssignment({ ticket, settings, actorId });
+  const employee = await runAutomaticAssignment({ ticket, settings, actorId, organizationId });
   if (!employee) {
     return { error: "No active employees available for automatic assignment.", status: 409 };
   }
@@ -343,18 +343,19 @@ async function assignTicketAutomatically({ ticketId, actorId, allowReassign = fa
  * FIFO/Round Robin, priority-first for Priority Wise). Workload is
  * recomputed as the batch runs so distribution stays fair within it.
  */
-async function assignAllUnassigned({ actorId }) {
-  const settings = await getSettings();
+async function assignAllUnassigned({ actorId, organizationId }) {
+  const settings = await getSettings(organizationId);
   if (settings.mode !== "automatic") {
     return { error: "Automatic assignment is not enabled. Switch Assignment Mode to Automatic first.", status: 400 };
   }
 
-  const employees = await getActiveEmployees();
+  const employees = await getActiveEmployees(organizationId);
   if (!employees.length) {
     return { error: "No active employees available for automatic assignment.", status: 409 };
   }
 
   const unassignedTickets = await Ticket.find({
+    organizationId,
     assignedTo: null,
     status: { $nin: ["Resolved", "Closed"] },
   });
@@ -364,7 +365,7 @@ async function assignAllUnassigned({ actorId }) {
   }
 
   const ordered = orderTicketsForAssignment(unassignedTickets, settings.strategy);
-  const workloadMap = await getWorkloadMap(employees.map((e) => e._id));
+  const workloadMap = await getWorkloadMap(employees.map((e) => e._id), organizationId);
   const assigned = [];
 
   for (const ticket of ordered) {

@@ -7,6 +7,8 @@ const userRoutes = require("./routes/userRoutes");
 const githubRoutes = require("./routes/githubRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const allocationRoutes = require("./routes/allocationRoutes");
+const organizationRoutes = require("./routes/organizationRoutes");
+const platformRoutes = require("./routes/platformRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -33,6 +35,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/github", githubRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/allocation", allocationRoutes);
+app.use("/api/organization", organizationRoutes);
+app.use("/api/platform", platformRoutes);
 
 // 404 + centralized error handler (must be last)
 app.use(notFound);

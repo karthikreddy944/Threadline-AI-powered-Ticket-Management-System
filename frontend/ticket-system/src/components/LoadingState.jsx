@@ -1,6 +1,6 @@
 export default function LoadingState({ rows = 4 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-line bg-surface p-4">
+    <div className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-5 shadow-xs">
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="flex items-center gap-3">
           <div className="h-8 w-8 shrink-0 animate-pulse rounded-md bg-surface-sunken" />

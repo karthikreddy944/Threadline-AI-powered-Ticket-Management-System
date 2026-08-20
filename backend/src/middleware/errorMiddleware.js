@@ -12,7 +12,7 @@ const notFound = (req, res, next) => {
  * outside of development mode.
  */
 const errorHandler = (err, req, res, next) => {
-  let statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+  let statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : err.statusCode || 500;
   let message = err.message || "Server error";
 
   // Invalid MongoDB ObjectId

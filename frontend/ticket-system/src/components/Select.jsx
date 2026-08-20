@@ -11,7 +11,7 @@ export default function Select({ label, hint, error, id, options = [], placehold
       <div className="relative">
         <select
           id={id}
-          className="h-9 w-full appearance-none rounded-md border border-line-strong bg-surface px-3 pr-8 text-[13px] text-ink outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent-line"
+          className="h-9 w-full appearance-none rounded-lg border border-line-strong bg-surface px-3 pr-8 text-[13px] text-ink shadow-xs outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-line"
           {...(props.value === undefined && props.defaultValue === undefined ? { defaultValue: "" } : {})}
           {...props}
         >

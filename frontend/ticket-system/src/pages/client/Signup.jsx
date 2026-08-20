@@ -15,8 +15,8 @@ export default function Signup() {
     email: "",
     password: "",
     confirmPassword: "",
-    department: "",
     phone: "",
+    adminCode: "",
   });
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -28,6 +28,7 @@ export default function Signup() {
   const validate = () => {
     const errors = {};
     if (!form.name.trim()) errors.name = "Full name is required";
+    if (!form.adminCode.trim()) errors.adminCode = "Admin Code is required";
     if (!form.email.trim()) errors.email = "Email is required";
     else if (!EMAIL_RE.test(form.email.trim())) errors.email = "Enter a valid email address";
     if (!form.password) errors.password = "Password is required";
@@ -50,8 +51,8 @@ export default function Signup() {
         email: form.email.trim(),
         password: form.password,
         confirmPassword: form.confirmPassword,
-        department: form.department.trim(),
         phone: form.phone.trim(),
+        adminCode: form.adminCode.trim(),
       });
       setSuccess(true);
       // Give the user a moment to see the confirmation, then send them
@@ -89,8 +90,8 @@ export default function Signup() {
   return (
     <AuthShell
       eyebrow="Threadline"
-      title="Create your account"
-      description="Sign up to raise and track IT support tickets for your department."
+      title="Join your organization"
+      description="Use the Admin Code given by your organization administrator to create your client account."
       footer={
         <>
           Already have an account?{" "}
@@ -101,6 +102,15 @@ export default function Signup() {
       }
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <Input
+          id="admin-code"
+          label="Admin Code"
+          placeholder="TL-XXXXXX-XXXX"
+          value={form.adminCode}
+          onChange={update("adminCode")}
+          error={fieldErrors.adminCode}
+          required
+        />
         <Input
           id="name"
           label="Full name"
@@ -114,18 +124,11 @@ export default function Signup() {
           id="signup-email"
           label="Email"
           type="email"
-          placeholder="you@example.com"
+          placeholder="you@bmsce.ac.in"
           value={form.email}
           onChange={update("email")}
           error={fieldErrors.email}
           required
-        />
-        <Input
-          id="department"
-          label="Department / Course"
-          placeholder="e.g. Computer Science"
-          value={form.department}
-          onChange={update("department")}
         />
         <Input
           id="phone"

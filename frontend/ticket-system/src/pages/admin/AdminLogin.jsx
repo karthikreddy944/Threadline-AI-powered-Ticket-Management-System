@@ -40,6 +40,7 @@ export default function AdminLogin() {
       description="Manage, triage and resolve tickets across the campus."
       footer={
         <>
+          New organization?  <Link to="/admin/signup" className="font-medium text-accent hover:underline">Create one</Link><br />
           Are you an employee?{" "}
           <Link to="/employee/login" className="font-medium text-accent hover:underline">
             Employee sign in
@@ -55,7 +56,7 @@ export default function AdminLogin() {
           id="admin-email"
           label="Admin email"
           type="email"
-          placeholder="you@example.com"
+          placeholder="you@bmsce.ac.in"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required

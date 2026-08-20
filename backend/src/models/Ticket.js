@@ -6,6 +6,7 @@ const TICKET_CATEGORIES = ["Network", "Hardware", "Software", "Account/Login", "
 
 const ticketSchema = new mongoose.Schema(
   {
+    organizationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true, required: false },
     ticketId: {
       type: String,
       unique: true,

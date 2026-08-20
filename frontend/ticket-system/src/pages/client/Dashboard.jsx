@@ -8,7 +8,6 @@ import TicketRow from "../../components/TicketRow";
 import LoadingState from "../../components/LoadingState";
 import EmptyState from "../../components/EmptyState";
 import { getMyTickets } from "../../lib/api";
-import GitRepositoryCard from "../../components/GitRepositoryCard";
 import { adaptTicket } from "../../lib/adapters";
 import { useAuth } from "../../context/AuthContext";
 
@@ -59,8 +58,6 @@ export default function Dashboard() {
           <LoadingState rows={4} />
         ) : (
           <>
-            <GitRepositoryCard />
-
             <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
               <Stat label="Open tickets" value={open} icon={FolderOpen} tone="accent" />
               <Stat label="In progress" value={inProgress} icon={Loader2} tone="warning" />

@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
-import { Plus, UserRound, UserX, RotateCcw, Pencil, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, UserRound, UserX, RotateCcw, Pencil, Trash2, Search, SlidersHorizontal, X } from "lucide-react";
 import Topbar from "../../components/Topbar";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
 import Modal from "../../components/Modal";
 import LoadingState from "../../components/LoadingState";
+import Select from "../../components/Select";
 import {
   createEmployee,
   getEmployees,
@@ -20,6 +21,10 @@ export default function Employees() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [query, setQuery] = useState("");
+  const [department, setDepartment] = useState("");
+  const [active, setActive] = useState("");
+  const [sort, setSort] = useState("newest");
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null); // employee being edited, or null when adding
@@ -31,12 +36,22 @@ export default function Employees() {
 
   const load = () => {
     setLoading(true);
-    getEmployees()
+    getEmployees({ search: query })
       .then(setEmployees)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   };
-  useEffect(load, []);
+  useEffect(() => { const timer = setTimeout(load, 250); return () => clearTimeout(timer); }, [query]);
+
+  const departments = useMemo(() => [...new Set(employees.map((employee) => employee.department).filter(Boolean))].sort(), [employees]);
+  const visibleEmployees = useMemo(() => employees.filter((employee) => (!department || employee.department === department) && (active === "" || String(employee.isActive !== false) === active)).sort((a, b) => {
+    if (sort === "name") return a.name.localeCompare(b.name);
+    if (sort === "workload") return (b.ticketStats?.open || 0) - (a.ticketStats?.open || 0);
+    if (sort === "resolved") return (b.ticketStats?.resolved || 0) - (a.ticketStats?.resolved || 0);
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  }), [employees, department, active, sort]);
+  const hasFilters = query || department || active || sort !== "newest";
+  const clearFilters = () => { setQuery(""); setDepartment(""); setActive(""); setSort("newest"); };
 
   const openAdd = () => {
     setEditing(null);
@@ -124,7 +139,14 @@ export default function Employees() {
         }
       />
       <div className="flex-1 overflow-y-auto px-6 py-6">
-        <div className="mx-auto max-w-6xl">
+        <div className="w-full">
+          <div className="mb-5 rounded-lg border border-line bg-surface p-4">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-end">
+              <label className="relative flex-1"><span className="sr-only">Search employees</span><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search employee, email, department, ID, or role…" className="h-9 w-full rounded-md border border-line-strong bg-surface pl-9 pr-3 text-[13px] outline-none focus:border-accent focus:ring-2 focus:ring-accent-line" /></label>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:w-[580px]"><Select id="employee-filter-department" label="Department" options={[{ value: "", label: "All departments" }, ...departments]} value={department} onChange={(e) => setDepartment(e.target.value)} /><Select id="employee-filter-status" label="Status" options={[{ value: "", label: "All statuses" }, { value: "true", label: "Active" }, { value: "false", label: "Inactive" }]} value={active} onChange={(e) => setActive(e.target.value)} /><Select id="employee-filter-sort" label="Sort by" options={[{ value: "newest", label: "Newest added" }, { value: "name", label: "Name A–Z" }, { value: "workload", label: "Open workload" }, { value: "resolved", label: "Most resolved" }]} value={sort} onChange={(e) => setSort(e.target.value)} /></div>
+            </div>
+            <div className="mt-3 flex items-center justify-between border-t border-line pt-3"><span className="inline-flex items-center gap-1.5 text-[12px] text-ink-faint"><SlidersHorizontal className="size-3.5" /> {visibleEmployees.length} employee{visibleEmployees.length === 1 ? "" : "s"}</span>{hasFilters && <Button variant="ghost" size="sm" icon={X} onClick={clearFilters}>Clear filters</Button>}</div>
+          </div>
           {notice && (
             <div className="mb-4 rounded-md border border-accent-line bg-accent-soft/40 p-3 text-[12.5px] text-accent">
               {notice}
@@ -152,12 +174,12 @@ export default function Employees() {
                 <span>Status</span>
                 <span>Action</span>
               </div>
-              {employees.length === 0 ? (
+              {visibleEmployees.length === 0 ? (
                 <div className="p-8 text-center text-[13px] text-ink-faint">
                   No employees yet. Add the first employee account.
                 </div>
               ) : (
-                employees.map((emp) => {
+                visibleEmployees.map((emp) => {
                   const stats = emp.ticketStats || { assigned: 0, open: 0, inProgress: 0, resolved: 0 };
                   return (
                     <div

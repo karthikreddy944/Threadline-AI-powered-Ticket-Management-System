@@ -8,6 +8,7 @@ import LoadingState from "../../components/LoadingState";
 import EmptyState from "../../components/EmptyState";
 import StatusBadge from "../../components/StatusBadge";
 import PriorityTag from "../../components/PriorityTag";
+import CodeAnalysis from "../../components/CodeAnalysis";
 import RepoAnalysis from "../../components/RepoAnalysis";
 import TicketTimeline from "../../components/TicketTimeline";
 import Modal from "../../components/Modal";
@@ -18,6 +19,7 @@ import {
   getTicketActivity,
   updateTicket,
   addTicketActivity,
+  analyzeTicketCode,
   analyzeTicketRepository,
   escalateTicket,
 } from "../../lib/api";
@@ -38,6 +40,7 @@ export default function TicketDetails() {
   const [sending, setSending] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [aiError, setAiError] = useState("");
+  const [aiNotice, setAiNotice] = useState("");
 
   // "Unable to Resolve" / escalate-to-admin state
   const [escalateOpen, setEscalateOpen] = useState(false);
@@ -103,6 +106,26 @@ export default function TicketDetails() {
       await reload();
     } catch (e) {
       setAiError(e.message);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const analyzeCode = async () => {
+    setAnalyzing(true);
+    setAiError("");
+    setAiNotice("");
+    try {
+      const result = await analyzeTicketCode(id);
+      if (result.status === "no_code_attachment") {
+        setAiNotice(result.message);
+      } else {
+        setTicket((current) => ({ ...current, aiAnalysis: result.analysis }));
+        const events = await getTicketActivity(id);
+        setActivity(events.map(adaptActivity));
+      }
+    } catch (e) {
+      setAiError(e.message || "AI analysis failed.");
     } finally {
       setAnalyzing(false);
     }
@@ -226,7 +249,15 @@ export default function TicketDetails() {
                 error={aiError}
                 onAnalyze={analyze}
               />
-            ) : null}
+            ) : (
+              <CodeAnalysis
+                analysis={ticket.aiAnalysis}
+                analyzing={analyzing}
+                error={aiError}
+                notice={aiNotice}
+                onAnalyze={analyzeCode}
+              />
+            )}
 
             <div className="rounded-lg border border-line bg-surface p-5">
               <h3 className="mb-4 text-[13px] font-semibold text-ink">Activity & notes</h3>

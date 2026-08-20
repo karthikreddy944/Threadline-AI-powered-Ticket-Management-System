@@ -7,9 +7,12 @@ const { notifyAdmins } = require("../services/notificationService");
 const { UPLOAD_DIR } = require("../middleware/uploadMiddleware");
 const { IMAGE_EXTENSIONS } = require("../config/attachmentPolicy");
 
-// Same "owner or admin" rule used throughout ticketController.
+// Same access rule used throughout ticketController: the client who created
+// the ticket, an admin in the same organization, or its assigned employee.
 const canAccessTicket = (ticket, user) =>
-  ticket.createdBy.toString() === user._id.toString() || user.role === "admin";
+  ticket.createdBy.toString() === user._id.toString()
+  || user.role === "admin"
+  || (user.role === "employee" && ticket.assignedTo?.toString() === user._id.toString());
 
 // Never return the on-disk filename or path to the client — only what
 // the UI needs. Downloads go through /attachments/:attachmentId instead
@@ -39,7 +42,7 @@ const cleanupUploadedFiles = (files = []) => {
  * the metadata.
  */
 const uploadAttachments = asyncHandler(async (req, res) => {
-  const ticket = await Ticket.findById(req.params.id);
+  const ticket = await Ticket.findOne({ _id: req.params.id, organizationId: req.organizationId });
 
   if (!ticket) {
     cleanupUploadedFiles(req.files);
@@ -108,7 +111,7 @@ const uploadAttachments = asyncHandler(async (req, res) => {
  * Ticket owner or admin only.
  */
 const listAttachments = asyncHandler(async (req, res) => {
-  const ticket = await Ticket.findById(req.params.id);
+  const ticket = await Ticket.findOne({ _id: req.params.id, organizationId: req.organizationId });
 
   if (!ticket) {
     res.status(404);
@@ -133,7 +136,7 @@ const listAttachments = asyncHandler(async (req, res) => {
  * static middleware, so this check always runs first.
  */
 const downloadAttachment = asyncHandler(async (req, res) => {
-  const ticket = await Ticket.findById(req.params.ticketId);
+  const ticket = await Ticket.findOne({ _id: req.params.ticketId, organizationId: req.organizationId });
 
   if (!ticket) {
     res.status(404);
@@ -180,7 +183,7 @@ const downloadAttachment = asyncHandler(async (req, res) => {
  * Ticket owner or admin only.
  */
 const deleteAttachment = asyncHandler(async (req, res) => {
-  const ticket = await Ticket.findById(req.params.ticketId);
+  const ticket = await Ticket.findOne({ _id: req.params.ticketId, organizationId: req.organizationId });
 
   if (!ticket) {
     res.status(404);

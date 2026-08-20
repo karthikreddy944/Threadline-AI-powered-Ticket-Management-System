@@ -20,26 +20,22 @@ const createTicket = asyncHandler(async (req, res) => {
     throw new Error("title, description, category and priority are required");
   }
 
-  if (!req.user.github?.fullName) {
-    res.status(400);
-    throw new Error("Connect a GitHub repository before creating a ticket.");
-  }
-
   const ticket = await Ticket.create({
+    organizationId: req.organizationId,
     title,
     description,
     category,
     priority,
     status: "New",
     createdBy: req.user._id,
-    githubRepo: {
+    githubRepo: req.organization?.github?.fullName ? {
       provider: "github",
-      owner: req.user.github.owner,
-      name: req.user.github.repoName,
-      fullName: req.user.github.fullName,
-      branch: req.user.github.defaultBranch || "main",
-      htmlUrl: req.user.github.htmlUrl || "",
-    },
+      owner: req.organization.github.owner,
+      name: req.organization.github.repoName,
+      fullName: req.organization.github.fullName,
+      branch: req.organization.github.defaultBranch || "main",
+      htmlUrl: req.organization.github.htmlUrl || "",
+    } : null,
     aiAnalysis: null,
     repoAnalysis: null,
   });
@@ -75,7 +71,7 @@ const createTicket = asyncHandler(async (req, res) => {
  * Returns tickets created by the logged-in client.
  */
 const getMyTickets = asyncHandler(async (req, res) => {
-  const tickets = await Ticket.find({ createdBy: req.user._id }).sort({ createdAt: -1 });
+  const tickets = await Ticket.find({ organizationId: req.organizationId, createdBy: req.user._id }).sort({ createdAt: -1 });
   return sendSuccess(res, 200, tickets);
 });
 
@@ -84,7 +80,7 @@ const getMyTickets = asyncHandler(async (req, res) => {
  * Accessible if the requester created the ticket, or is an admin.
  */
 const getTicketById = asyncHandler(async (req, res) => {
-  const ticket = await Ticket.findById(req.params.id)
+  const ticket = await Ticket.findOne({ _id: req.params.id, organizationId: req.organizationId })
     .populate("createdBy", "name email")
     .populate("assignedTo", "name email");
 
@@ -102,6 +98,20 @@ const getTicketById = asyncHandler(async (req, res) => {
     throw new Error("Forbidden: you do not have access to this ticket");
   }
 
+  // Staff investigations always use the organization's current admin-connected
+  // repository. This also lets tickets created before a repository was linked
+  // show the correct repository and analysis controls.
+  if ((isAdmin || isAssignee) && req.organization?.github?.fullName) {
+    ticket.githubRepo = {
+      provider: "github",
+      owner: req.organization.github.owner,
+      name: req.organization.github.repoName,
+      fullName: req.organization.github.fullName,
+      branch: req.organization.github.defaultBranch || "main",
+      htmlUrl: req.organization.github.htmlUrl || "",
+    };
+  }
+
   return sendSuccess(res, 200, ticket);
 });
 
@@ -113,7 +123,7 @@ const getTicketById = asyncHandler(async (req, res) => {
 const getAllTickets = asyncHandler(async (req, res) => {
   const { search, status, priority, category, page = 1, limit = 20 } = req.query;
 
-  const filter = buildTicketFilter({ search, status, priority, category });
+  const filter = { organizationId: req.organizationId, ...buildTicketFilter({ search, status, priority, category }) };
 
   const pageNum = Math.max(parseInt(page, 10) || 1, 1);
   const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
@@ -142,9 +152,9 @@ const getAllTickets = asyncHandler(async (req, res) => {
 
 
 const getAssignedTickets = asyncHandler(async (req,res)=>{
-  const { status, priority, search } = req.query;
-  const filter = { assignedTo: req.user._id };
-  if(status) filter.status=status; if(priority) filter.priority=priority;
+  const { status, priority, category, search } = req.query;
+  const filter = { organizationId: req.organizationId, assignedTo: req.user._id };
+  if(status) filter.status=status; if(priority) filter.priority=priority; if(category) filter.category=category;
   if(search) filter.$or=[{title:new RegExp(search,"i")},{ticketId:new RegExp(search,"i")},{description:new RegExp(search,"i")}];
   const tickets=await Ticket.find(filter).populate("createdBy","name email").populate("assignedTo","name email").sort({updatedAt:-1});
   return sendSuccess(res,200,tickets);
@@ -152,15 +162,15 @@ const getAssignedTickets = asyncHandler(async (req,res)=>{
 
 const getEmployeeStats = asyncHandler(async(req,res)=>{
  const [total,active,resolved,pending,critical,escalated]=await Promise.all([
-  Ticket.countDocuments({assignedTo:req.user._id}),
-  Ticket.countDocuments({assignedTo:req.user._id,status:{ $in:["Assigned","In Progress"] }}),
-  Ticket.countDocuments({assignedTo:req.user._id,status:{ $in:["Resolved","Closed"] }}),
-  Ticket.countDocuments({assignedTo:req.user._id,status:"Pending"}),
-  Ticket.countDocuments({assignedTo:req.user._id,priority:"Critical",status:{ $nin:["Resolved","Closed"] }}),
+  Ticket.countDocuments({organizationId:req.organizationId,assignedTo:req.user._id}),
+  Ticket.countDocuments({organizationId:req.organizationId,assignedTo:req.user._id,status:{ $in:["Assigned","In Progress"] }}),
+  Ticket.countDocuments({organizationId:req.organizationId,assignedTo:req.user._id,status:{ $in:["Resolved","Closed"] }}),
+  Ticket.countDocuments({organizationId:req.organizationId,assignedTo:req.user._id,status:"Pending"}),
+  Ticket.countDocuments({organizationId:req.organizationId,assignedTo:req.user._id,priority:"Critical",status:{ $nin:["Resolved","Closed"] }}),
   // Escalated is measured from the activity log (not the live assignedTo
   // field) so it still reflects this employee's own escalations even
   // after an admin reassigns the ticket to someone else.
-  TicketActivity.countDocuments({actor:req.user._id, action:"escalated"})
+  TicketActivity.countDocuments({organizationId:req.organizationId, actor:req.user._id, action:"escalated"})
  ]); return sendSuccess(res,200,{total,active,resolved,pending,critical,escalated});
 });
 
@@ -183,7 +193,7 @@ const escalateTicket = asyncHandler(async (req, res) => {
     throw new Error("A reason is required to escalate this ticket.");
   }
 
-  const ticket = await Ticket.findById(req.params.id);
+  const ticket = await Ticket.findOne({ _id: req.params.id, organizationId: req.organizationId });
   if (!ticket) {
     res.status(404);
     throw new Error("Ticket not found");
@@ -245,7 +255,7 @@ const ALLOWED_UPDATE_FIELDS = ["status", "priority", "category", "assignedTo"];
  */
 const updateTicket = asyncHandler(async (req, res) => {
   if (!["admin","employee"].includes(req.user.role)) { res.status(403); throw new Error("Forbidden"); }
-  const ticket = await Ticket.findById(req.params.id);
+  const ticket = await Ticket.findOne({ _id: req.params.id, organizationId: req.organizationId });
 
   if (!ticket) {
     res.status(404);
@@ -280,6 +290,7 @@ const updateTicket = asyncHandler(async (req, res) => {
         throw new Error("Invalid employee id");
       }
       const employee = await User.findOne({
+        organizationId: req.organizationId,
         _id: req.body.assignedTo,
         role: "employee",
         isActive: true,
@@ -449,7 +460,7 @@ const addTicketActivity = asyncHandler(async (req, res) => {
     throw new Error("message is required");
   }
 
-  const ticket = await Ticket.findById(req.params.id);
+  const ticket = await Ticket.findOne({ _id: req.params.id, organizationId: req.organizationId });
   if (!ticket) {
     res.status(404);
     throw new Error("Ticket not found");
@@ -501,7 +512,7 @@ const addTicketActivity = asyncHandler(async (req, res) => {
  * (Not explicitly required, but needed for the frontend timeline to work.)
  */
 const getTicketActivity = asyncHandler(async (req, res) => {
-  const ticket = await Ticket.findById(req.params.id);
+  const ticket = await Ticket.findOne({ _id: req.params.id, organizationId: req.organizationId });
   if (!ticket) {
     res.status(404);
     throw new Error("Ticket not found");
@@ -516,7 +527,7 @@ const getTicketActivity = asyncHandler(async (req, res) => {
     throw new Error("Forbidden: you do not have access to this ticket");
   }
 
-  const activity = await TicketActivity.find({ ticket: ticket._id })
+  const activity = await TicketActivity.find({ organizationId: req.organizationId, ticket: ticket._id })
     .populate("actor", "name email role")
     .sort({ createdAt: 1 });
 
@@ -536,7 +547,7 @@ const getTicketAnalytics = asyncHandler(async (req, res) => {
   const days = allowedDays.includes(requestedDays) ? requestedDays : 7;
   const now = new Date();
   const since = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-  const periodFilter = { createdAt: { $gte: since, $lte: now } };
+  const periodFilter = { organizationId: req.organizationId, createdAt: { $gte: since, $lte: now } };
 
   const [
     total,
@@ -580,7 +591,7 @@ const getTicketAnalytics = asyncHandler(async (req, res) => {
       { $sort: { _id: 1 } },
     ]),
     Ticket.aggregate([
-      { $match: { assignedTo: { $ne: null } } },
+      { $match: { organizationId: req.organizationId, assignedTo: { $ne: null } } },
       {
         $group: {
           _id: "$assignedTo",
@@ -689,9 +700,9 @@ const getTicketAnalytics = asyncHandler(async (req, res) => {
   // "Trend" reuses the same per-day bucketing as the ticket-volume chart,
   // but counted from TicketActivity "escalated" entries within the window.
   const [escalationTotal, escalationByEmployee, escalationByPriority, escalationTrend] = await Promise.all([
-    TicketActivity.countDocuments({ action: "escalated", createdAt: { $gte: since, $lte: now } }),
+    TicketActivity.countDocuments({ organizationId: req.organizationId, action: "escalated", createdAt: { $gte: since, $lte: now } }),
     TicketActivity.aggregate([
-      { $match: { action: "escalated", createdAt: { $gte: since, $lte: now } } },
+      { $match: { organizationId: req.organizationId, action: "escalated", createdAt: { $gte: since, $lte: now } } },
       { $group: { _id: "$actor", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "employee" } },
@@ -699,11 +710,11 @@ const getTicketAnalytics = asyncHandler(async (req, res) => {
       { $project: { _id: 0, id: "$employee._id", name: "$employee.name", email: "$employee.email", count: 1 } },
     ]),
     Ticket.aggregate([
-      { $match: { "escalation.escalatedToAdmin": true } },
+      { $match: { organizationId: req.organizationId, "escalation.escalatedToAdmin": true } },
       { $group: { _id: "$priority", count: { $sum: 1 } } },
     ]),
     TicketActivity.aggregate([
-      { $match: { action: "escalated", createdAt: { $gte: since, $lte: now } } },
+      { $match: { organizationId: req.organizationId, action: "escalated", createdAt: { $gte: since, $lte: now } } },
       { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } },
       { $sort: { _id: 1 } },
     ]),
@@ -740,11 +751,11 @@ const getTicketAnalytics = asyncHandler(async (req, res) => {
  */
 const getTicketStats = asyncHandler(async (req, res) => {
   const [total, statusCounts, highPriority, unassigned, escalated] = await Promise.all([
-    Ticket.countDocuments(),
-    Ticket.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
-    Ticket.countDocuments({ priority: { $in: ["High", "Critical"] } }),
-    Ticket.countDocuments({ assignedTo: null }),
-    Ticket.countDocuments({ "escalation.escalatedToAdmin": true }),
+    Ticket.countDocuments({ organizationId: req.organizationId }),
+    Ticket.aggregate([{ $match: { organizationId: req.organizationId } }, { $group: { _id: "$status", count: { $sum: 1 } } }]),
+    Ticket.countDocuments({ organizationId: req.organizationId, priority: { $in: ["High", "Critical"] } }),
+    Ticket.countDocuments({ organizationId: req.organizationId, assignedTo: null }),
+    Ticket.countDocuments({ organizationId: req.organizationId, "escalation.escalatedToAdmin": true }),
   ]);
 
   const statusMap = statusCounts.reduce((acc, cur) => {
@@ -771,7 +782,7 @@ const getTicketStats = asyncHandler(async (req, res) => {
  * Powers the "Escalated Tickets" card on the Admin Dashboard.
  */
 const getEscalatedTickets = asyncHandler(async (req, res) => {
-  const tickets = await Ticket.find({ "escalation.escalatedToAdmin": true })
+  const tickets = await Ticket.find({ organizationId: req.organizationId, "escalation.escalatedToAdmin": true })
     .populate("createdBy", "name email")
     .populate("assignedTo", "name email")
     .populate("escalation.escalatedBy", "name email")

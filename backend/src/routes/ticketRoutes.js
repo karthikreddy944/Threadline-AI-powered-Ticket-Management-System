@@ -39,7 +39,9 @@ router.get("/escalated", requireRole("admin"), getEscalatedTickets);
 router.get("/employee", requireRole("employee"), getAssignedTickets);
 router.get("/employee/stats", requireRole("employee"), getEmployeeStats);
 
-router.route("/").get(requireRole("admin"), getAllTickets).post(createTicket);
+// Only clients can open tickets. The controller derives both tenant and
+// creator from the authenticated account, never from request data.
+router.route("/").get(requireRole("admin"), getAllTickets).post(requireRole("client"), createTicket);
 
 router.route("/:id").get(getTicketById).put(updateTicket);
 
@@ -56,8 +58,8 @@ router.get("/:id/attachments", listAttachments);
 router.get("/:ticketId/attachments/:attachmentId", downloadAttachment);
 router.delete("/:ticketId/attachments/:attachmentId", deleteAttachment);
 
-// A.E. — AI Engine / LLM code analysis. Admin only: clients can
-// neither trigger nor read the analysis.
+// A.E. — AI Engine / LLM analysis. Admins and the employee assigned to a
+// ticket may use it; clients cannot trigger or read analyses.
 router.post("/:id/ai/analyze", requireRole("admin", "employee"), analyzeCode);
 router.get("/:id/ai", requireRole("admin", "employee"), getAiAnalysis);
 router.post("/:id/ai/analyze-repo", requireRole("admin", "employee"), analyzeRepository);

@@ -15,7 +15,8 @@ export default function EmployeeLayout() {
 
   const navItems = [
     { to: "/employee", label: "Dashboard", icon: LayoutGrid, end: true },
-    { to: "/employee/tickets", label: "My Tickets", icon: Ticket },
+    { to: "/employee/tickets", label: "Related Tickets", icon: Ticket },
+    { to: "/employee/repository", label: "Repository", icon: GitBranch },
     { to: "/employee/analytics", label: "Analytics", icon: BarChart3 },
     { to: "/employee/notifications", label: "Notifications", icon: Bell, count: unreadCount || undefined },
     { to: "/employee/settings", label: "Settings", icon: Settings },
@@ -23,7 +24,7 @@ export default function EmployeeLayout() {
 
   const sidebarUser = {
     name: user?.name || "",
-    role: user?.department || "Employee",
+    role: user?.organization?.adminCode ? `Admin Code: ${user.organization.adminCode}` : (user?.department || "Employee"),
     initials: getInitials(user?.name),
   };
 

@@ -1,8 +1,8 @@
 import { Loader2 } from "lucide-react";
 
 const variants = {
-  primary: "bg-accent text-ink-on-accent hover:bg-accent-hover border border-transparent",
-  secondary: "bg-surface text-ink border border-line-strong hover:bg-surface-alt",
+  primary: "bg-accent text-ink-on-accent hover:bg-accent-hover border border-transparent shadow-sm hover:shadow-md",
+  secondary: "bg-surface text-ink border border-line-strong hover:bg-surface-alt hover:border-accent-line shadow-xs",
   ghost: "bg-transparent text-ink-muted hover:bg-surface-alt hover:text-ink border border-transparent",
   danger: "bg-danger text-white hover:bg-[#94201a] border border-transparent",
 };
@@ -25,7 +25,7 @@ export default function Button({
 }) {
   return (
     <Tag
-      className={`inline-flex items-center justify-center rounded-md font-medium transition-all duration-100 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100 whitespace-nowrap ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center justify-center rounded-lg font-medium transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent-line disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100 whitespace-nowrap ${variants[variant]} ${sizes[size]} ${className}`}
       disabled={loading || props.disabled}
       {...props}
     >

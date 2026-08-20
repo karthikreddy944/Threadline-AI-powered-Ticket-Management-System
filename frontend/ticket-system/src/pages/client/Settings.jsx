@@ -5,6 +5,7 @@ import Button from "../../components/Button";
 import LoadingState from "../../components/LoadingState";
 import { getCurrentUser } from "../../lib/api";
 import { getInitials } from "../../lib/adapters";
+import AppearanceSettings from "../../components/AppearanceSettings";
 
 export default function Settings() {
   const [profile, setProfile] = useState(null);
@@ -32,7 +33,7 @@ export default function Settings() {
     <>
       <Topbar eyebrow="Account" title="Profile & settings" />
       <div className="flex-1 overflow-y-auto px-6 py-6">
-        <div className="mx-auto flex max-w-xl flex-col gap-5">
+        <div className="flex w-full flex-col gap-5">
           <div className="rounded-lg border border-line bg-surface p-5">
             <div className="mb-4 flex items-center gap-3">
               <div className="flex size-11 items-center justify-center rounded-full bg-surface-sunken text-[13px] font-semibold text-ink">
@@ -40,13 +41,12 @@ export default function Settings() {
               </div>
               <div>
                 <p className="text-[13.5px] font-semibold text-ink">{profile?.name}</p>
-                <p className="text-[12px] text-ink-faint">{profile?.department || "Client"}</p>
+                <p className="text-[12px] text-ink-faint">Client</p>
               </div>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input id="name" label="Full name" defaultValue={profile?.name} />
               <Input id="email" label="Email" defaultValue={profile?.email} disabled />
-              <Input id="dept" label="Company" defaultValue={profile?.department} />
               <Input id="phone" label="Phone (optional)" placeholder="+91 " />
             </div>
             <div className="mt-4 flex items-center justify-end gap-3 border-t border-line pt-4">
@@ -56,6 +56,8 @@ export default function Settings() {
               </Button>
             </div>
           </div>
+
+          <AppearanceSettings />
 
           <div className="rounded-lg border border-line bg-surface p-5">
             <h3 className="mb-3 text-[13px] font-semibold text-ink">Notification preferences</h3>

@@ -51,6 +51,13 @@
   --shadow-lg: 0 12px 32px rgba(20, 22, 18, 0.12), 0 2px 6px rgba(20, 22, 18, 0.06);
 }
 
+:root[data-theme="dark"] {
+  --color-canvas: #111513; --color-surface: #191f1c; --color-surface-alt: #222a25; --color-surface-sunken: #101512;
+  --color-line: #303a34; --color-line-strong: #46524a; --color-ink: #edf4ef; --color-ink-muted: #b2bdb5; --color-ink-faint: #7f8c83; --color-ink-on-accent: #f7fffa;
+  --color-accent: #39a891; --color-accent-hover: #52bba5; --color-accent-soft: #173a31; --color-accent-line: #2c6859;
+  --color-success: #54c981; --color-success-soft: #173d26; --color-warning: #e2b45d; --color-warning-soft: #3e3017; --color-danger: #f08078; --color-danger-soft: #442321; --color-info: #7fb9e2; --color-info-soft: #193342; --color-neutral-soft: #2b322e;
+}
+
 @layer base {
   * {
     border-color: var(--color-line);
@@ -61,6 +68,7 @@
   }
   body {
     background-color: var(--color-canvas);
+    background-image: radial-gradient(800px circle at 100% -10%, rgba(228, 240, 236, .6), transparent 45%);
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-size: 13.5px;
@@ -89,11 +97,20 @@
     border-radius: 8px;
     border: 2px solid var(--color-canvas);
   }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #b9bcb4;
+  }
 }
 
 @layer utilities {
   .font-tabular {
     font-variant-numeric: tabular-nums;
+  }
+  .app-panel {
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .92);
+    box-shadow: var(--shadow-xs);
   }
   .scrollbar-none {
     scrollbar-width: none;
@@ -113,6 +130,12 @@
   .animate-gradient-x {
     background-size: 200% 200%;
     animation: gradientX 6s ease infinite;
+  }
+  .animate-pulse-soft {
+    animation: pulseSoft 2.4s ease-in-out infinite;
+  }
+  .animate-scan {
+    animation: scan 2.8s ease-in-out infinite;
   }
   .reveal {
     opacity: 0;
@@ -140,8 +163,18 @@
   50% { background-position: 100% 50%; }
 }
 
+@keyframes pulseSoft {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(14, 107, 92, 0.18); transform: scale(1); }
+  50% { box-shadow: 0 0 0 10px rgba(14, 107, 92, 0); transform: scale(1.06); }
+}
+
+@keyframes scan {
+  0%, 100% { transform: translateX(-18%); opacity: .6; }
+  50% { transform: translateX(28%); opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-float, .animate-float-slow, .animate-fade-up, .animate-gradient-x {
+  .animate-float, .animate-float-slow, .animate-fade-up, .animate-gradient-x, .animate-pulse-soft, .animate-scan {
     animation: none !important;
   }
   .reveal {

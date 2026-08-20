@@ -15,6 +15,13 @@ import {
   UserRound,
   UserCog,
   Building2,
+  Shield,
+  FilePenLine,
+  Layers3,
+  CircleDotDashed,
+  TicketCheck,
+  Activity,
+  UsersRound,
 } from "lucide-react";
 import Reveal from "../components/Reveal";
 
@@ -54,6 +61,24 @@ const FEATURES = [
     title: "Role-scoped security",
     description:
       "Clients, employees, and admins each see exactly what they're supposed to — enforced server-side, not just hidden in the UI.",
+  },
+  {
+    icon: FilePenLine,
+    title: "Repository workspace",
+    description:
+      "Browse, edit, and commit supported source files to the organization’s connected GitHub repository without exposing access tokens.",
+  },
+  {
+    icon: Shield,
+    title: "Platform controls",
+    description:
+      "Platform Operations manages organization subscriptions, company access, and per-organization AI availability from one secure console.",
+  },
+  {
+    icon: Layers3,
+    title: "Multi-tenant by design",
+    description:
+      "Every client, employee, ticket, repository, and AI result stays isolated within its own organization.",
   },
 ];
 
@@ -98,6 +123,13 @@ const PORTALS = [
     to: "/admin/login",
     cta: "Admin sign in",
   },
+  {
+    icon: Shield,
+    role: "Platform Operations",
+    description: "Manage company access, subscriptions, and AI availability across Threadline.",
+    to: "/platform/login",
+    cta: "Platform sign in",
+  },
 ];
 
 export default function Landing() {
@@ -121,30 +153,32 @@ export default function Landing() {
         }}
         aria-hidden="true"
       />
+      <HeroSignals />
 
       {/* Nav */}
       <header className="sticky top-0 z-30 border-b border-line/70 bg-canvas/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
+        <div className="flex h-16 w-full items-center justify-between px-5 sm:px-8 lg:px-12">
           <div className="flex items-center gap-2">
             <div className="flex size-8 items-center justify-center rounded-lg bg-accent text-ink-on-accent shadow-sm">
               <GitBranch className="size-4" strokeWidth={2.5} />
             </div>
             <span className="font-display text-[16px] font-semibold tracking-tight text-ink">Threadline</span>
           </div>
-          <nav className="hidden items-center gap-7 md:flex">
+          <nav className="hidden items-center gap-6 lg:flex">
             <a href="#features" className="text-[13px] font-medium text-ink-muted hover:text-ink">Features</a>
             <a href="#workflow" className="text-[13px] font-medium text-ink-muted hover:text-ink">How it works</a>
-            <a href="#portals" className="text-[13px] font-medium text-ink-muted hover:text-ink">Sign in</a>
+            <a href="#portals" className="text-[13px] font-medium text-ink-muted hover:text-ink">Workspaces</a>
+            <Link to="/platform/login" className="text-[13px] font-medium text-ink-muted hover:text-ink">Platform</Link>
           </nav>
           <div className="flex items-center gap-2">
             <Link
               to="/login"
-              className="hidden h-8 items-center rounded-md px-3 text-[13px] font-medium text-ink-muted hover:bg-surface-alt hover:text-ink sm:inline-flex"
+              className="hidden h-8 items-center rounded-md px-3 text-[13px] font-medium text-ink-muted hover:bg-surface-alt hover:text-ink md:inline-flex"
             >
-              Sign in
+              Client sign in
             </Link>
             <Link
-              to="/signup"
+              to="/admin/signup"
               className="inline-flex h-8 items-center gap-1.5 rounded-md bg-accent px-3.5 text-[13px] font-medium text-ink-on-accent shadow-sm transition-colors hover:bg-accent-hover"
             >
               Get started
@@ -182,10 +216,10 @@ export default function Landing() {
             style={{ animationDelay: "240ms" }}
           >
             <Link
-              to="/signup"
+              to="/admin/signup"
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-accent px-6 text-[14px] font-medium text-ink-on-accent shadow-md transition-all hover:-translate-y-0.5 hover:bg-accent-hover hover:shadow-lg sm:w-auto"
             >
-              Create your free account
+              Create your organization
               <ArrowRight className="size-4" strokeWidth={2} />
             </Link>
             <a
@@ -247,6 +281,21 @@ export default function Landing() {
         </Reveal>
       </section>
 
+      <Reveal as="section" className="mx-auto -mt-8 max-w-6xl px-5 pb-12 sm:-mt-10">
+        <div className="grid overflow-hidden rounded-2xl border border-line bg-surface shadow-sm sm:grid-cols-3">
+          {[
+            ["One workspace", "Tickets, source context, and collaboration in a single flow."],
+            ["AI with control", "Platform and organization-level controls keep AI access deliberate."],
+            ["Built for teams", "Dedicated client, employee, admin, and platform workspaces."],
+          ].map(([title, text], index) => (
+            <div key={title} className={`p-5 ${index ? "border-t border-line sm:border-l sm:border-t-0" : ""}`}>
+              <p className="text-[13px] font-semibold text-ink">{title}</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">{text}</p>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+
       {/* Trust strip */}
       <Reveal as="section" className="border-y border-line bg-surface/60">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-5 py-8 text-center sm:grid-cols-4">
@@ -269,7 +318,7 @@ export default function Landing() {
         <Reveal className="mx-auto max-w-xl text-center">
           <span className="text-[12px] font-semibold uppercase tracking-wide text-accent">Features</span>
           <h2 className="mt-2 font-display text-[26px] font-semibold tracking-tight text-ink sm:text-[30px]">
-            Everything a support team actually needs
+            From support request to source-level resolution
           </h2>
           <p className="mt-3 text-[14px] text-ink-muted">
             No fake widgets, no filler dashboards — every number and every insight comes from real backend data.
@@ -331,7 +380,7 @@ export default function Landing() {
           </p>
         </Reveal>
 
-        <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {PORTALS.map((p, i) => (
             <Reveal key={p.role} delay={i * 80}>
               <Link
@@ -359,7 +408,7 @@ export default function Landing() {
           <p className="text-[12.5px] text-ink-faint">
             New to Threadline?{" "}
             <Link to="/signup" className="font-medium text-accent hover:underline">
-              Create a client account
+              Join an organization as a client
             </Link>{" "}
             to start raising tickets.
           </p>
@@ -367,17 +416,24 @@ export default function Landing() {
       </section>
 
       {/* Closing CTA */}
-      <Reveal as="section" className="border-t border-line">
-        <div className="mx-auto max-w-4xl px-5 py-20 text-center">
-          <h2 className="font-display text-[24px] font-semibold tracking-tight text-ink sm:text-[28px]">
-            Ready to stop losing track of tickets?
+      <Reveal as="section" className="relative overflow-hidden border-t border-line bg-surface-alt/40">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden xl:block">
+          <div className="absolute left-12 top-12 w-60 animate-float-slow rounded-xl border border-line bg-surface/80 p-4 shadow-sm"><div className="flex items-center gap-2"><span className="size-2 rounded-full bg-warning" /><span className="text-[10px] font-semibold uppercase tracking-wide text-ink-faint">Ticket queue</span></div><p className="mt-3 text-[12px] font-medium text-ink">3 tickets waiting for triage</p><div className="mt-3 flex gap-1"><span className="h-1.5 w-12 rounded bg-danger-soft" /><span className="h-1.5 w-8 rounded bg-warning-soft" /><span className="h-1.5 w-16 rounded bg-accent-soft" /></div></div>
+          <div className="absolute left-[21rem] top-28 h-px w-36 border-t border-dashed border-accent-line" />
+          <div className="absolute right-12 top-16 w-64 animate-float rounded-xl border border-accent-line bg-surface/85 p-4 shadow-sm" style={{ animationDelay: "-3s" }}><div className="flex items-center gap-2"><Sparkles className="size-3.5 text-accent" /><span className="text-[10px] font-semibold uppercase tracking-wide text-accent">AI ready</span></div><p className="mt-3 text-[12px] leading-relaxed text-ink-muted">Repository context, likely causes, and suggested fixes are one click away.</p></div>
+          <div className="absolute right-[22rem] top-32 h-px w-32 border-t border-dashed border-accent-line" />
+        </div>
+        <div className="relative mx-auto max-w-4xl px-5 py-20 text-center">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-line bg-accent-soft px-3 py-1 text-[11px] font-medium text-accent"><TicketCheck className="size-3.5" /> Built for the whole support lifecycle</span>
+          <h2 className="mt-4 font-display text-[24px] font-semibold tracking-tight text-ink sm:text-[30px]">
+            Turn every support ticket into a clear path to resolution.
           </h2>
-          <p className="mx-auto mt-3 max-w-md text-[14px] text-ink-muted">
-            Set up takes minutes. Your team can be triaging with AI assistance today.
+          <p className="mx-auto mt-3 max-w-xl text-[14px] leading-relaxed text-ink-muted">
+            Set up your organization in minutes, connect GitHub when you are ready, and give every team member the context to move work forward.
           </p>
           <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
-              to="/signup"
+              to="/admin/signup"
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-accent px-6 text-[14px] font-medium text-ink-on-accent shadow-md transition-all hover:-translate-y-0.5 hover:bg-accent-hover hover:shadow-lg sm:w-auto"
             >
               Get started free
@@ -394,24 +450,64 @@ export default function Landing() {
       </Reveal>
 
       {/* Footer */}
-      <footer className="border-t border-line bg-surface-alt/40">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-8 sm:flex-row">
+      <footer className="border-t border-line bg-surface">
+        <div className="flex w-full flex-col items-center justify-between gap-4 px-5 py-8 sm:flex-row sm:px-8 lg:px-12">
           <div className="flex items-center gap-2">
             <div className="flex size-6 items-center justify-center rounded-md bg-accent text-ink-on-accent">
               <GitBranch className="size-3.5" strokeWidth={2.5} />
             </div>
             <span className="font-display text-[13px] font-semibold tracking-tight text-ink">Threadline</span>
           </div>
-          <div className="flex items-center gap-5 text-[12.5px] text-ink-faint">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12.5px] text-ink-faint sm:justify-end">
             <span className="inline-flex items-center gap-1.5">
               <CheckCircle2 className="size-3.5" strokeWidth={2} /> Built for real teams
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Clock className="size-3.5" strokeWidth={2} /> Live status, always
             </span>
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="size-3.5" strokeWidth={2} /> Tenant-scoped access
+            </span>
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function HeroSignals() {
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-16 z-0 hidden h-[620px] overflow-hidden 2xl:block">
+      <svg className="absolute inset-0 h-full w-full opacity-70" viewBox="0 0 1800 620" fill="none" preserveAspectRatio="none">
+        <path d="M0 255 C175 255 160 420 335 420 C440 420 405 520 590 520" stroke="var(--color-accent-line)" strokeWidth="1.5" strokeDasharray="5 8" />
+        <path d="M1800 180 C1650 180 1660 350 1490 350 C1380 350 1430 490 1230 490" stroke="var(--color-accent-line)" strokeWidth="1.5" strokeDasharray="5 8" />
+        <circle cx="335" cy="420" r="5" fill="var(--color-accent)" /><circle cx="1490" cy="350" r="5" fill="var(--color-accent)" />
+      </svg>
+      <div className="absolute left-20 top-28 w-56 animate-float-slow rounded-xl border border-line bg-surface/90 p-4 shadow-md backdrop-blur">
+        <div className="flex items-center justify-between"><span className="font-mono text-[10px] font-medium text-ink-faint">TKT-00482</span><span className="rounded-full bg-danger-soft px-2 py-0.5 text-[10px] font-medium text-danger">Critical</span></div>
+        <p className="mt-3 text-[12.5px] font-semibold text-ink">Checkout timeout</p>
+        <div className="mt-3 flex items-center gap-2 text-[10.5px] text-ink-faint"><CircleDotDashed className="size-3 text-accent" /><span>Routing to Payments</span></div>
+      </div>
+      <div className="absolute left-52 top-[345px] h-36 w-px border-l border-dashed border-accent-line" />
+      <div className="absolute left-[17rem] top-[465px] flex size-8 animate-pulse-soft items-center justify-center rounded-full border border-accent-line bg-accent-soft text-accent"><ArrowRight className="size-3.5" /></div>
+      <div className="absolute right-20 top-48 w-60 animate-float rounded-xl border border-accent-line bg-surface/95 p-4 shadow-md backdrop-blur" style={{ animationDelay: "-2.5s" }}>
+        <div className="flex items-center gap-2 text-accent"><Sparkles className="size-3.5" /><span className="text-[10px] font-semibold uppercase tracking-wide">AI investigation</span></div>
+        <p className="mt-3 text-[12px] font-medium leading-relaxed text-ink">Likely root cause found in <span className="font-mono text-[10.5px] text-info">auth/session.ts</span></p>
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-sunken"><div className="h-full w-3/4 animate-scan rounded-full bg-accent" /></div>
+      </div>
+      <div className="absolute right-52 top-[410px] w-48 animate-float-slow rounded-xl border border-line bg-surface/90 p-3 shadow-sm backdrop-blur" style={{ animationDelay: "-4s" }}>
+        <div className="flex items-center gap-2"><TicketCheck className="size-4 text-success" /><span className="text-[11px] font-semibold text-ink">Resolved</span></div>
+        <p className="mt-1 text-[10.5px] text-ink-faint">Customer notified just now</p>
+      </div>
+      <div className="absolute left-[26rem] top-[495px] flex items-center gap-2 rounded-full border border-line bg-surface/90 px-3 py-2 shadow-sm backdrop-blur">
+        <span className="relative flex size-2"><span className="absolute inline-flex size-full animate-ping rounded-full bg-success/60" /><span className="relative inline-flex size-2 rounded-full bg-success" /></span>
+        <span className="text-[10.5px] font-medium text-ink-muted">All services operational</span>
+      </div>
+      <div className="absolute right-[25rem] top-[510px] w-52 rounded-xl border border-line bg-surface/90 p-3 shadow-sm backdrop-blur animate-float" style={{ animationDelay: "-1s" }}>
+        <div className="flex items-center justify-between"><span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink-faint"><UsersRound className="size-3" /> Team load</span><span className="text-[10px] font-medium text-success">Balanced</span></div>
+        <div className="mt-3 flex items-end gap-1"><span className="h-3 w-4 rounded-sm bg-accent-soft" /><span className="h-6 w-4 rounded-sm bg-accent-soft" /><span className="h-4 w-4 rounded-sm bg-accent" /><span className="h-8 w-4 rounded-sm bg-accent-soft" /><span className="h-5 w-4 rounded-sm bg-accent-soft" /></div>
+      </div>
+      <div className="absolute left-[31rem] top-20 flex items-center gap-2 rounded-full border border-info/20 bg-info-soft/60 px-3 py-1.5 text-[10.5px] font-medium text-info animate-float-slow" style={{ animationDelay: "-5s" }}><Activity className="size-3" /> Live ticket activity</div>
     </div>
   );
 }

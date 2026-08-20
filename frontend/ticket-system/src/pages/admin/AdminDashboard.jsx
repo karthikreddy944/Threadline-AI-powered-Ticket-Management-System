@@ -71,7 +71,7 @@ export default function AdminDashboard() {
             </div>
 
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="rounded-lg border border-line bg-surface p-4"><div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-ink-faint"><GitBranch className="size-3.5" /> Repository-linked tickets</div><div className="mt-2 text-[22px] font-semibold text-ink">{tickets.filter((t) => t.githubRepo).length}</div><p className="mt-1 text-[11.5px] text-ink-faint">Tickets linked to a client GitHub repository.</p></div>
+              <div className="rounded-lg border border-line bg-surface p-4"><div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-ink-faint"><GitBranch className="size-3.5" /> Repository-linked tickets</div><div className="mt-2 text-[22px] font-semibold text-ink">{tickets.filter((t) => t.githubRepo).length}</div><p className="mt-1 text-[11.5px] text-ink-faint">Tickets linked to a organization GitHub repository.</p></div>
               <div className="rounded-lg border border-accent-line bg-accent-soft/40 p-4"><div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-accent"><Sparkle className="size-3.5" /> AI investigations</div><div className="mt-2 text-[22px] font-semibold text-ink">{tickets.filter((t) => t.repoAnalysis).length}</div><p className="mt-1 text-[11.5px] text-ink-faint">Repository investigations already completed.</p></div>
             </div>
 

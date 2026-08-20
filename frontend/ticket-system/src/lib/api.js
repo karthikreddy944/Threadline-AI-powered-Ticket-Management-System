@@ -74,6 +74,15 @@ export const registerUser = (payload) =>
 export const login = (email, password) =>
   request("/auth/login", { method: "POST", body: { email, password }, auth: false });
 
+export const registerAdmin = (payload) => request("/auth/admin/register", { method: "POST", body: payload, auth: false });
+export const getOrganization = () => request("/organization");
+export const getPlatformAdministrators = () => request("/platform/administrators");
+export const updatePlatformAdministrator = (organizationId, payload) => request(`/platform/administrators/${organizationId}`, { method: "PATCH", body: payload });
+export const getPlatformAiSettings = () => request("/platform/ai-settings");
+export const updatePlatformAiSettings = (payload) => request("/platform/ai-settings", { method: "PATCH", body: payload });
+export const getClients = (query = {}) => { const params = new URLSearchParams(query).toString(); return request(`/organization/clients${params ? `?${params}` : ""}`); };
+export const getClientDetails = (id) => request(`/organization/clients/${id}`);
+
 // ---- Users ----
 export const getCurrentUser = () => request("/users/me");
 export const getUsers = (query = {}) => {
@@ -114,7 +123,7 @@ export const updateAllocationSettings = (payload) => request("/allocation", { me
 // Automatic assignment — only succeeds server-side when Assignment Mode is "automatic".
 export const autoAssignTicket = (ticketId) => request(`/allocation/assign/${ticketId}`, { method: "POST" });
 export const autoAssignAllUnassigned = () => request("/allocation/assign-all", { method: "POST" });
-export const getEmployees = () => request("/users/employees");
+export const getEmployees = (query = {}) => { const params = new URLSearchParams(query).toString(); return request(`/users/employees${params ? `?${params}` : ""}`); };
 export const createEmployee = (payload) => request("/users/employees", { method: "POST", body: payload });
 export const updateEmployee = (id, payload) => request(`/users/employees/${id}`, { method: "PUT", body: payload });
 export const updateEmployeeStatus = (id, isActive) =>
@@ -133,7 +142,7 @@ export const getTicketAttachments = (ticketId) => request(`/tickets/${ticketId}/
 export const deleteTicketAttachment = (ticketId, attachmentId) =>
   request(`/tickets/${ticketId}/attachments/${attachmentId}`, { method: "DELETE" });
 
-// ---- AI Engine (A.E.) — admin only ----
+// ---- AI Engine (A.E.) — admins and the employee assigned to the ticket ----
 // Both resolve to { status: "ok" | "no_code_attachment" | "not_analyzed", message, analysis }
 export const analyzeTicketCode = (ticketId) =>
   request(`/tickets/${ticketId}/ai/analyze`, { method: "POST" });
@@ -147,6 +156,10 @@ export const getGitHubStatus = () => request("/github/status");
 export const getGitHubRepos = () => request("/github/repos");
 export const selectGitHubRepository = (owner, name) => request("/github/repository", { method: "POST", body: { owner, name } });
 export const disconnectGitHub = () => request("/github/connection", { method: "DELETE" });
+export const getConnectedRepository = () => request("/github/repository/current");
+export const getRepositoryFiles = () => request("/github/repository/files");
+export const getRepositoryFile = (path) => request(`/github/repository/file?path=${encodeURIComponent(path)}`);
+export const saveRepositoryFile = (payload) => request("/github/repository/file", { method: "PUT", body: payload });
 
 // Recognizes GitHub authorization errors (expired/revoked token) coming
 // back from any /github/* call, so the UI can offer "Reconnect GitHub"

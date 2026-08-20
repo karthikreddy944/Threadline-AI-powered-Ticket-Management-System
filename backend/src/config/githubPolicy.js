@@ -1,6 +1,7 @@
 const REPO_ANALYZABLE_EXTENSIONS = new Set([
   ".js", ".jsx", ".ts", ".tsx", ".py", ".java", ".c", ".cpp", ".h", ".hpp",
-  ".html", ".css", ".json", ".md", ".sql", ".go", ".rs", ".rb", ".php", ".xml", ".yml", ".yaml"
+  ".html", ".css", ".scss", ".sass", ".vue", ".svelte", ".json", ".md", ".sql", ".go", ".rs", ".rb", ".php", ".xml", ".yml", ".yaml",
+  ".cs", ".csproj", ".kt", ".kts", ".swift", ".m", ".mm", ".dart", ".scala", ".sh", ".bash", ".ps1", ".r", ".lua", ".pl", ".ex", ".exs", ".tf"
 ]);
 const IGNORED_PATH_PARTS = new Set(["node_modules", ".git", "dist", "build", "coverage", ".next", ".nuxt", "vendor", "target", "bin", "obj", "__pycache__", ".venv", "venv"]);
 const MAX_TREE_ENTRIES = 10000;
