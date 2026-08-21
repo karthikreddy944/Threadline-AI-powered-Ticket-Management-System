@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { AlertTriangle, Check, CheckCircle2, Copy, GitBranch, RotateCw } from "lucide-react";
 import Topbar from "../../components/Topbar";
 import Input from "../../components/Input";
 import Button from "../../components/Button";
 import LoadingState from "../../components/LoadingState";
-import { getCurrentUser, getOrganization, getAllocationSettings, updateAllocationSettings } from "../../lib/api";
+import { getCurrentUser, getOrganization, getAllocationSettings, updateAllocationSettings, getGitHubAuthUrl, getGitHubStatus, isGitHubAuthError } from "../../lib/api";
 import { getInitials } from "../../lib/adapters";
 import AppearanceSettings from "../../components/AppearanceSettings";
 
@@ -18,6 +18,10 @@ export default function AdminSettings() {
 
   const [organization, setOrganization] = useState(null);
   const [loadError, setLoadError] = useState("");
+  const [github, setGithub] = useState(null);
+  const [githubLoading, setGithubLoading] = useState(true);
+  const [githubWorking, setGithubWorking] = useState(false);
+  const [githubError, setGithubError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -43,6 +47,32 @@ export default function AdminSettings() {
     load();
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    getGitHubStatus()
+      .then((status) => { if (active) setGithub(status); })
+      .catch((error) => {
+        if (!active) return;
+        setGithubError(isGitHubAuthError(error) ? "Your GitHub authorization has expired." : error.message || "Could not load GitHub connection.");
+      })
+      .finally(() => { if (active) setGithubLoading(false); });
+
+    return () => { active = false; };
+  }, []);
+
+  const reconnectGitHub = async () => {
+    setGithubWorking(true);
+    setGithubError("");
+    try {
+      const { url } = await getGitHubAuthUrl();
+      window.location.assign(url);
+    } catch (error) {
+      setGithubError(error.message || "Could not start GitHub reconnection.");
+      setGithubWorking(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -124,6 +154,21 @@ export default function AdminSettings() {
             </div>
           </div>
           <AppearanceSettings />
+          <div className="rounded-lg border border-line bg-surface p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="flex items-center gap-2 text-[13px] font-semibold text-ink"><GitBranch className="size-4" /> GitHub connection</h3>
+                <p className="mt-1 text-[12px] text-ink-faint">Reconnect GitHub when access has expired or your account permissions have changed.</p>
+              </div>
+              {github?.connected && !githubError && <CheckCircle2 className="size-4 shrink-0 text-success" />}
+            </div>
+            <div className="mt-4 rounded-md border border-line bg-surface-alt/60 p-3">
+              {githubLoading ? <p className="text-[12px] text-ink-faint">Checking GitHub connection…</p> : githubError ? <p className="flex items-center gap-1.5 text-[12px] text-danger"><AlertTriangle className="size-3.5" />{githubError}</p> : github?.connected ? <div><p className="text-[12.5px] font-medium text-ink">Connected as {github.username || "GitHub account"}</p>{github.repository && <p className="mt-1 text-[11.5px] text-ink-faint">Repository: {github.repository.fullName}</p>}</div> : <p className="text-[12px] text-ink-faint">No GitHub account is connected yet.</p>}
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button variant="secondary" size="sm" icon={RotateCw} onClick={reconnectGitHub} loading={githubWorking}>Reconnect GitHub</Button>
+            </div>
+          </div>
           <div className="rounded-lg border border-line bg-surface p-5">
             <h3 className="mb-1 text-[13px] font-semibold text-ink">Assignment settings</h3>
             <p className="mb-4 text-[12px] text-ink-faint">Choose whether tickets are assigned to employees manually or automatically.</p>

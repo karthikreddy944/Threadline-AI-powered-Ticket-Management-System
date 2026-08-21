@@ -14,6 +14,7 @@ import TicketTimeline from "../../components/TicketTimeline";
 import Modal from "../../components/Modal";
 import Textarea from "../../components/Textarea";
 import Badge from "../../components/Badge";
+import AttachmentList from "../../components/AttachmentList";
 import {
   getTicketById,
   getTicketActivity,
@@ -199,6 +200,7 @@ export default function TicketDetails() {
                 <PriorityTag priority={ticket.priority} />
               </div>
               <p className="mt-4 text-[13.5px] leading-relaxed text-ink">{ticket.description}</p>
+              <AttachmentList ticketId={ticket.routeId} attachments={ticket.attachments} />
               {ticket.githubRepo && (
                 <div className="mt-4 rounded-md border border-line bg-surface-alt/60 p-3">
                   <div className="flex items-center gap-2">
