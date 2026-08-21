@@ -15,7 +15,7 @@ import {
 // GitBranch is used for the header/brand icon instead — see Sidebar.jsx,
 // which already relies on the same icon for the same reason.
 
-export default function GitRepositoryCard() {
+export default function GitRepositoryCard({ externalAuthExpired = false }) {
   const [status, setStatus] = useState(null);
   const [repos, setRepos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +25,7 @@ export default function GitRepositoryCard() {
   // or a 403 that's clearly a credentials problem) — distinct from any
   // other failure, since only this case is fixed by reconnecting.
   const [authExpired, setAuthExpired] = useState(false);
+  const githubAuthExpired = authExpired || externalAuthExpired;
 
   const load = async () => {
     setLoading(true);
@@ -126,7 +127,7 @@ export default function GitRepositoryCard() {
       {/* STATE 4 — authorization expired/revoked. Takes priority over
           whatever `status` says, since a stale DB record can still say
           "connected" even after GitHub itself has revoked the token. */}
-      {!loading && authExpired && (
+      {!loading && githubAuthExpired && (
         <div className="mt-3 rounded-md border border-danger/40 bg-danger-soft/50 p-3">
           <div className="flex items-start gap-2">
             <AlertTriangle className="mt-0.5 size-4 text-danger" />
@@ -147,7 +148,7 @@ export default function GitRepositoryCard() {
       )}
 
       {/* STATE 3 — repository selected. */}
-      {!loading && !authExpired && status?.repository && (
+      {!loading && !githubAuthExpired && status?.repository && (
         <div className="mt-3 rounded-md border border-line bg-surface-alt/60 p-3">
           <div className="flex items-start gap-2">
             <CheckCircle2 className="mt-0.5 size-4 text-success" />
@@ -173,7 +174,7 @@ export default function GitRepositoryCard() {
       )}
 
       {/* STATE 2 — connected, repository not selected yet. */}
-      {!loading && !authExpired && !status?.repository && status?.connected && (
+      {!loading && !githubAuthExpired && !status?.repository && status?.connected && (
         <div className="mt-3 rounded-md border border-accent-line bg-accent-soft/40 p-3">
           <div className="text-[12.5px] font-medium text-ink">GitHub connected as {status.username}</div>
           <p className="mt-1 text-[11.5px] text-ink-faint">Select the repository used for support tickets.</p>
@@ -200,7 +201,7 @@ export default function GitRepositoryCard() {
       )}
 
       {/* STATE 1 — nothing connected yet. */}
-      {!loading && !authExpired && !status?.connected && (
+      {!loading && !githubAuthExpired && !status?.connected && (
         <div className="mt-3 flex items-center justify-between gap-3 rounded-md border border-line bg-surface-alt/60 p-3">
           <div>
             <div className="text-[12.5px] font-medium text-ink">No repository connected</div>

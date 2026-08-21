@@ -32,6 +32,14 @@ export const setUnauthorizedHandler = (fn) => {
   unauthorizedHandler = fn;
 };
 
+// A 401 from a /github endpoint can come from either our JWT middleware or
+// GitHub rejecting the organization's stored OAuth token. Only the former is
+// a reason to end the Threadline session.
+const isExpiredGitHubAuthorization = (path, status, message = "") =>
+  path.startsWith("/github/")
+  && status === 401
+  && /github authorization has expired|reconnect github|github rejected/i.test(message);
+
 async function request(path, { method = "GET", body, auth = true } = {}) {
   // FormData (file uploads) must NOT be JSON-stringified, and must NOT get
   // an explicit Content-Type — the browser sets multipart/form-data with
@@ -58,7 +66,7 @@ async function request(path, { method = "GET", body, auth = true } = {}) {
   const json = await response.json().catch(() => ({}));
 
   if (!response.ok || json.success === false) {
-    if (response.status === 401 && auth && !path.startsWith("/github/")) {
+    if (response.status === 401 && auth && !isExpiredGitHubAuthorization(path, response.status, json.message)) {
       unauthorizedHandler?.();
     }
     throw new ApiError(json.message || `Request failed (${response.status})`, response.status);
@@ -177,7 +185,7 @@ const GITHUB_AUTH_ERROR_PATTERNS = [
 export const isGitHubAuthError = (error) => {
   if (!error) return false;
   const message = error.message || "";
-  if (error.status === 401) return true;
+  if (error.status === 401 && /github authorization has expired|reconnect github|github rejected/i.test(message)) return true;
   if (error.status === 403 && /expired|revoked|invalid/i.test(message)) return true;
   return GITHUB_AUTH_ERROR_PATTERNS.some((pattern) => pattern.test(message));
 };

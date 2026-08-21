@@ -3,9 +3,9 @@ import { ExternalLink, FileCode2, GitBranch, Save } from "lucide-react";
 import Button from "./Button";
 import LoadingState from "./LoadingState";
 import CodeEditor from "./CodeEditor";
-import { getRepositoryFile, getRepositoryFiles, saveRepositoryFile } from "../lib/api";
+import { getRepositoryFile, getRepositoryFiles, isGitHubAuthError, saveRepositoryFile } from "../lib/api";
 
-export default function RepositoryEditor() {
+export default function RepositoryEditor({ onGitHubAuthExpired }) {
   const [repository, setRepository] = useState(null);
   const [files, setFiles] = useState([]);
   const [selectedPath, setSelectedPath] = useState("");
@@ -24,9 +24,12 @@ export default function RepositoryEditor() {
         setRepository(result.repository);
         setFiles(result.files || []);
       })
-      .catch((err) => setError(err.message || "Could not load the connected repository."))
+      .catch((err) => {
+        if (isGitHubAuthError(err)) onGitHubAuthExpired?.();
+        setError(err.message || "Could not load the connected repository.");
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [onGitHubAuthExpired]);
 
   const visibleFiles = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -45,6 +48,7 @@ export default function RepositoryEditor() {
       setRepository(result.repository);
     } catch (err) {
       setFile(null);
+      if (isGitHubAuthError(err)) onGitHubAuthExpired?.();
       setError(err.message || "Could not open this file.");
     } finally {
       setLoadingFile(false);
@@ -61,6 +65,7 @@ export default function RepositoryEditor() {
       setFile((current) => ({ ...current, sha: result.sha || current.sha }));
       setNotice("Saved to the connected GitHub repository.");
     } catch (err) {
+      if (isGitHubAuthError(err)) onGitHubAuthExpired?.();
       setError(err.message || "Could not save this file.");
     } finally {
       setSaving(false);
