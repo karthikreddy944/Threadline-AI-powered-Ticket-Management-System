@@ -43,6 +43,14 @@ router.get("/employee/stats", requireRole("employee"), getEmployeeStats);
 // creator from the authenticated account, never from request data.
 router.route("/").get(requireRole("admin"), getAllTickets).post(requireRole("client"), createTicket);
 
+// Keep attachment routes before the generic /:id ticket route. This makes
+// the download URL unambiguous and ensures it cannot be handled as a ticket
+// lookup by route ordering changes later on.
+router.post("/:id/attachments", uploadTicketAttachments, uploadAttachments);
+router.get("/:id/attachments", listAttachments);
+router.get("/:ticketId/attachments/:attachmentId", downloadAttachment);
+router.delete("/:ticketId/attachments/:attachmentId", deleteAttachment);
+
 router.route("/:id").get(getTicketById).put(updateTicket);
 
 router.get("/:id/activity", getTicketActivity);
@@ -52,11 +60,6 @@ router.post("/:id/activity", addTicketActivity);
 // requireRole("employee") is a first line of defense; the controller
 // additionally re-verifies assignedTo against req.user from the JWT.
 router.post("/:id/escalate", requireRole("employee"), escalateTicket);
-
-router.post("/:id/attachments", uploadTicketAttachments, uploadAttachments);
-router.get("/:id/attachments", listAttachments);
-router.get("/:ticketId/attachments/:attachmentId", downloadAttachment);
-router.delete("/:ticketId/attachments/:attachmentId", deleteAttachment);
 
 // A.E. — AI Engine / LLM analysis. Admins and the employee assigned to a
 // ticket may use it; clients cannot trigger or read analyses.
