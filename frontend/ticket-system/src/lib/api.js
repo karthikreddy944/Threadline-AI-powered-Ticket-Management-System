@@ -58,7 +58,7 @@ async function request(path, { method = "GET", body, auth = true } = {}) {
   const json = await response.json().catch(() => ({}));
 
   if (!response.ok || json.success === false) {
-    if (response.status === 401 && auth) {
+    if (response.status === 401 && auth && && !path.startsWith("/github/")) {
       unauthorizedHandler?.();
     }
     throw new ApiError(json.message || `Request failed (${response.status})`, response.status);
